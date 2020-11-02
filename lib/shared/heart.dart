@@ -5,16 +5,71 @@ class Heart extends StatefulWidget {
   _HeartState createState() => _HeartState();
 }
 
-class _HeartState extends State<Heart> {
+class _HeartState extends State<Heart> with SingleTickerProviderStateMixin {
+  bool _isFav = false;
+  AnimationController _controller;
+  Animation<Color> _colorAnimation;
+  Animation<double> _sizeAnimation;
+  Animation _curve;
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: Duration(milliseconds: 500),
+    );
+
+    _curve = CurvedAnimation(parent: _controller, curve: Curves.slowMiddle);
+    _colorAnimation = ColorTween(begin: Colors.grey[400], end: Colors.red).animate(_curve);
+    _sizeAnimation = TweenSequence(<TweenSequenceItem<double>>[
+      TweenSequenceItem<double>(
+        tween: Tween<double>(begin: 30,end:50),
+        weight: 50,
+      ),
+      TweenSequenceItem<double>(
+        tween: Tween<double>(begin: 50, end:30),
+        weight: 50,
+      ),
+    ]).animate(_curve);
+    _controller.addListener(() {
+      setState(() {});
+    });
+    _controller.addStatusListener((status) {
+      if (status == AnimationStatus.completed) {
+        setState(() {
+          _isFav = true;
+        });
+      }
+      if (status == AnimationStatus.dismissed) {
+        setState(() {
+          _isFav = false;
+        });
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+    _controller.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
-    return IconButton(
-      icon: Icon(
-        Icons.favorite,
-        color: Colors.grey[400],
-        size: 30,
-      ),
-      onPressed: () {},
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (BuildContext context, _) {
+        return IconButton(
+          icon: Icon(
+            Icons.favorite,
+            color: _colorAnimation.value,
+            size: _sizeAnimation.value,
+          ),
+          onPressed: () {
+            _isFav ? _controller.reverse() : _controller.forward();
+          },
+        );
+      },
     );
   }
 }
